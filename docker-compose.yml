@@ -1,0 +1,76 @@
+version: '2.1'
+
+services:
+  # $ mongo
+  mongodb:
+    image: mongo:3.6.9
+    mem_limit: 350m
+    networks:
+      - ecom-network
+    ports:
+      - "27017:27017"
+    command: mongod --smallfiles
+    healthcheck:
+      test: "mongo --eval 'db.stats().ok'"
+      interval: 20s
+      timeout: 5s
+      retries: 10
+
+  # $ mysql -uroot -h127.0.0.1 -p
+  mysql:
+    image: mysql
+    mem_limit: 350m
+    networks:
+      - ecom-network
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpwd
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=pwd
+    healthcheck:
+      test: "/usr/bin/mysql --user=user --password=pwd --execute \"SHOW DATABASES;\""
+      interval: 20s
+      timeout: 5s
+      retries: 10
+
+
+  zipkin:
+    image: openzipkin/zipkin:2.12.9
+    mem_limit: 512m
+    networks:
+      - ecom-network
+    environment:
+      - STORAGE_TYPE=mem
+#      - MYSQL_DB=zipkin-db
+#      - MYSQL_USER=root
+#      - MYSQL_PASS=rootpwd
+#      - MYSQL_HOST=192.168.0.103
+#      - MYSQL_TCP_PORT=3306
+#      - MYSQL_MAX_CONNECTIONS=10
+      - KAFKA_BOOTSTRAP_SERVERS=192.168.0.103:9092,192.168.0.103:9093,192.168.0.103:9094
+      - KAFKA_TOPIC=com.ecom.zipkins.m.ld
+      - KAFKA_STREAMS=2
+    ports:
+      - 9411:9411
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  rabbitmq:
+    image: rabbitmq:3.7.8-management
+    mem_limit: 350m
+    networks:
+      - ecom-network
+    ports:
+      - 5672:5672
+      - 15672:15672
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 20s
+      timeout: 5s
+      retries: 10
+
+networks:
+  ecom-network:
+    name: ecom-network
