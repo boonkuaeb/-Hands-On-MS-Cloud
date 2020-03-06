@@ -294,6 +294,7 @@ assertCurl 403 "curl -k http://$HOST:$PORT/product-composite/$PROD_ID_REVS_RECS 
 
 echo "End, all tests OK:" `date`
 
+
 if [[ $@ == *"stop"* ]]
 then
     echo "Stopping the test environment..."
